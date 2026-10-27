@@ -1,5 +1,14 @@
 #!/usr/bin/env node
-import { cpSync, existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import {
@@ -101,6 +110,12 @@ Commands:
   check <slug> [--strict]        Run lint + browser check
   snapshot <slug> [--review] [--at 1,3,5] [--range 2,6] [--frames 5]
                                  Capture frames for visual review
+  golden <slug> [--update] [--at 1,3,5] [--threshold 0.99]
+                                 Compare shot-midpoint stills against snapshots/golden and
+                                 fail on pixel drift; --update writes the baseline
+  motion <slug> [--file renders/x.mp4] [--hold 0.35] [--min-static 0.6] [--max-static 3]
+                                 Measure dead frames, static stretches, end hold and the
+                                 motion band; a static stretch >= max-static fails
   render <slug> [--quality delivery|looks|draft] [--output path] [--workers auto]
                                  [--browser-gpu] [--gpu] [--docker] [--no-master]
                                  Render MP4, master audio and write render telemetry
@@ -108,8 +123,9 @@ Commands:
                                  Render through HyperFrames Cloud (long-form delivery)
   master <slug> [--file renders/x.mp4]
                                  Normalize the render audio to -14 LUFS / -1 dBTP
-  qa <slug> [--file renders/x.mp4] [--skip-captions] [--no-chapters] [--strict]
-                                 Verify duration, streams, loudness, freeze, chapters, captions
+  qa <slug> [--file renders/x.mp4] [--skip-captions] [--no-chapters] [--motion] [--strict]
+                                 Verify duration, streams, loudness, freeze, chapters, captions;
+                                 --motion adds dead frames, static stretches and end hold
   thumbnail <slug> [--at 4]       Capture a caption-free 1280x720 thumbnail
   package <slug> [--thumb-time 0.5]
                                  Write publish/youtube.md, chapters and publish/thumbnail.jpg
@@ -402,6 +418,12 @@ async function cmdCompile() {
     fail(`Missing videos/${slug}/episode.json. Run: node harness/cli.mjs migrate ${slug}`);
   const errors = validateEpisode(episode);
   failOnEpisodeErrors(errors);
+  const frameFile = path.join(dir, "frame.md");
+  if (existsSync(frameFile) && readFileSync(frameFile, "utf8").includes("LOOK-NOT-CHOSEN")) {
+    fail(
+      "frame.md is still the neutral template. Choose the look from the subject's medium and fill its tokens before compile.",
+    );
+  }
   let effective = episode;
   if (flags.tail != null) effective = { ...episode, tailSeconds: Number(flags.tail) };
   const timing = readJSON(path.join(dir, "assets/voice/timing.json"));
@@ -947,6 +969,12 @@ async function cmdLintScript() {
   for (const file of ["frame.md", "ASSETS.md", "VOICE.md", "MUSIC.md"]) {
     if (!existsSync(path.join(dir, file))) warnings.push(`missing ${file}`);
   }
+  const frameFile = path.join(dir, "frame.md");
+  if (existsSync(frameFile) && readFileSync(frameFile, "utf8").includes("LOOK-NOT-CHOSEN")) {
+    errors.push(
+      "frame.md still has the neutral template (LOOK-NOT-CHOSEN); choose the look and fill its tokens",
+    );
+  }
   const briefFile = path.join(dir, "BRIEF.md");
   if (!existsSync(briefFile)) errors.push("missing BRIEF.md");
   else {
@@ -1019,6 +1047,509 @@ async function cmdSnapshot() {
   const images = [...new Set(collectImages(data))];
   for (const image of images) info(image.startsWith("/") ? image : path.join(dir, image));
   ok(`${images.length} image(s)`);
+}
+
+function sha256File(file) {
+  return createHash("sha256").update(readFileSync(file)).digest("hex");
+}
+
+function walkRelative(dir, base = dir, out = []) {
+  if (!existsSync(dir)) return out;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walkRelative(full, base, out);
+    else out.push(path.relative(base, full));
+  }
+  return out;
+}
+
+function goldenSourceFiles(dir) {
+  const files = ["index.html", "frame.md", "episode.json", "assets/timeline.json"].filter((rel) =>
+    existsSync(path.join(dir, rel)),
+  );
+  for (const rel of walkRelative(path.join(dir, "compositions")))
+    files.push(path.join("compositions", rel));
+  return files.sort();
+}
+
+function goldenTimes(timeline) {
+  const times = [];
+  for (const shot of timeline?.shots ?? []) {
+    const time = Number((shot.start + shot.duration / 2).toFixed(3));
+    if (times.every((other) => Math.abs(other - time) > 0.01)) times.push(time);
+  }
+  return times;
+}
+
+function nearestShot(timeline, time) {
+  let best = null;
+  let bestDistance = Infinity;
+  for (const shot of timeline?.shots ?? []) {
+    const distance = Math.abs(shot.start + shot.duration / 2 - time);
+    if (distance < bestDistance) {
+      best = shot;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+function captureStills(dir, times, outDir) {
+  rmSync(outDir, { recursive: true, force: true });
+  ensureDir(outDir);
+  const result = hf(
+    [
+      "snapshot",
+      dir,
+      "--at",
+      times.map(String).join(","),
+      "--no-end",
+      "--keep",
+      "--output",
+      outDir,
+      "--json",
+    ],
+    { cwd: ROOT },
+  );
+  const text = `${result.stdout ?? ""}`.trim();
+  const start = text.indexOf("{");
+  if (start === -1) fail(`golden: snapshot failed\n${text}\n${result.stderr ?? ""}`);
+  const data = JSON.parse(text.slice(start));
+  if (data.ok === false) fail(`golden: snapshot reported a failure\n${text}`);
+  return { frames: data.frames ?? [], version: data._meta?.version ?? null };
+}
+
+function ssimScore(a, b) {
+  const result = run("ffmpeg", [
+    "-hide_banner",
+    "-nostats",
+    "-i",
+    a,
+    "-i",
+    b,
+    "-lavfi",
+    "ssim",
+    "-f",
+    "null",
+    "-",
+  ]);
+  const match = `${result.stderr ?? ""}`.match(/All:\s*([0-9.]+)/);
+  return match ? Number(match[1]) : null;
+}
+
+async function cmdGolden() {
+  const slug = requireSlug();
+  const cfg = videoConfig(slug);
+  const dir = videoDir(slug);
+  const threshold = Number(flags.threshold ?? 0.99);
+  if (!Number.isFinite(threshold) || threshold <= 0 || threshold > 1)
+    fail("golden: --threshold must be a number above 0 and at most 1");
+
+  const loaded = loadEpisode(dir, cfg, { allowLegacy: true });
+  const times = flags.at
+    ? String(flags.at)
+        .split(",")
+        .map((value) => Number(value.trim()))
+        .filter((value) => Number.isFinite(value))
+    : goldenTimes(loaded?.timeline);
+  if (!times.length)
+    fail(`golden: no shot timings in ${slug}. Run compile/sync, or pass --at 1,3,5`);
+
+  const baseDir = path.join(dir, "snapshots/golden");
+  const manifestFile = path.join(baseDir, "manifest.json");
+  const captureDir = path.join(dir, ".hyperframes/golden-capture");
+  const capture = captureStills(dir, times, captureDir);
+  if (!capture.frames.length) fail("golden: snapshot captured no frames");
+  const sources = Object.fromEntries(
+    goldenSourceFiles(dir).map((rel) => [rel, sha256File(path.join(dir, rel))]),
+  );
+
+  if (flags.update) {
+    rmSync(baseDir, { recursive: true, force: true });
+    cpSync(captureDir, baseDir, { recursive: true });
+    const frames = capture.frames.map((frame) => {
+      const file = path.basename(frame.path);
+      return {
+        time: Number(frame.time),
+        shot: nearestShot(loaded?.timeline, Number(frame.time))?.id ?? null,
+        file,
+        sha256: sha256File(path.join(baseDir, file)),
+      };
+    });
+    writeJSON(manifestFile, {
+      schemaVersion: 1,
+      createdAt: new Date().toISOString(),
+      hyperframes: capture.version,
+      threshold,
+      capture: "--no-end --keep",
+      sources,
+      frames,
+    });
+    info("");
+    for (const frame of frames)
+      info(`  ${String(frame.shot ?? "-").padEnd(20)} ${frame.time.toFixed(2).padStart(7)}s`);
+    ok(`golden baseline: ${frames.length} frame(s) in ${baseDir}`);
+    return;
+  }
+
+  if (!existsSync(manifestFile))
+    fail(`golden: no baseline in ${baseDir}. Run: node harness/cli.mjs golden ${slug} --update`);
+  const manifest = readJSON(manifestFile);
+  if (!manifest?.frames?.length) fail(`golden: ${manifestFile} has no frames`);
+
+  const captured = new Map(
+    capture.frames.map((frame) => [Number(frame.time).toFixed(3), frame.path]),
+  );
+  const results = [];
+  const problems = [];
+  const warnings = [];
+
+  for (const base of manifest.frames) {
+    const key = Number(base.time).toFixed(3);
+    const capturedFile = captured.get(key);
+    if (!capturedFile) {
+      problems.push(`no still captured at ${base.time}s`);
+      continue;
+    }
+    const baselineFile = path.join(baseDir, base.file);
+    if (!existsSync(baselineFile)) {
+      problems.push(`baseline image missing: ${base.file}`);
+      continue;
+    }
+    const baselineHash = sha256File(baselineFile);
+    const capturedHash = sha256File(capturedFile);
+    const score = baselineHash === capturedHash ? 1 : ssimScore(baselineFile, capturedFile);
+    if (score == null) {
+      problems.push(`SSIM could not compare ${base.file}`);
+      continue;
+    }
+    if (baselineHash !== base.sha256)
+      warnings.push(`baseline ${base.file} was edited after the manifest`);
+    const pass = score >= threshold;
+    results.push({
+      shot: base.shot,
+      time: Number(base.time),
+      ssim: score,
+      pass,
+      baseline: baselineFile,
+      captured: capturedFile,
+    });
+    if (!pass)
+      problems.push(
+        `${base.shot ?? base.time + "s"} at ${Number(base.time).toFixed(2)}s: ssim ${score.toFixed(4)} < ${threshold}`,
+      );
+  }
+
+  for (const frame of capture.frames) {
+    const key = Number(frame.time).toFixed(3);
+    if (!manifest.frames.some((base) => Number(base.time).toFixed(3) === key))
+      warnings.push(`captured ${frame.time}s with no baseline (shot times changed?)`);
+  }
+
+  const changed = Object.entries(sources)
+    .filter(([rel, hash]) => manifest.sources?.[rel] !== hash)
+    .map(([rel]) => rel);
+  if (changed.length) warnings.push(`${changed.length} source file(s) changed since the baseline`);
+
+  const report = {
+    ok: problems.length === 0,
+    threshold,
+    baseline: baseDir,
+    entry: "index.html",
+    hyperframes: capture.version,
+    changedSources: changed,
+    frames: results,
+    problems,
+    warnings,
+  };
+  writeJSON(path.join(dir, "publish/golden.json"), report);
+
+  info("");
+  for (const result of results)
+    info(
+      `  ${result.pass ? "pass" : "FAIL"}  ${String(result.shot ?? "-").padEnd(20)} ${result.time.toFixed(2).padStart(7)}s  ssim ${result.ssim.toFixed(4)}`,
+    );
+  for (const warning of warnings) info(`  warning: ${warning}`);
+  if (!report.ok) fail(`golden: ${problems.length} drift(s) against ${manifest.frames.length} frame(s)`);
+  ok(`golden: ${results.length} frame(s) match the baseline (threshold ${threshold})`);
+}
+
+const MOTION_WIDTH = 96;
+const MOTION_HEIGHT = 54;
+const MOTION_FLAT_STD = 1.5;
+const MOTION_FLAT_RANGE = 8;
+const MOTION_HOLD_EPS = 0.35;
+const MOTION_HOLD_WARN = 1.4;
+const MOTION_BAND = { low: 4.4, median: 6.8, high: 9.8 };
+
+function percentile(sorted, ratio) {
+  if (!sorted.length) return 0;
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * ratio)));
+  return sorted[index];
+}
+
+function collectRuns(flags, minFrames) {
+  const runs = [];
+  let start = -1;
+  const flush = (end) => {
+    if (start !== -1 && end - start >= minFrames) runs.push({ startFrame: start, endFrame: end - 1 });
+    start = -1;
+  };
+  for (let frame = 0; frame < flags.length; frame++) {
+    if (flags[frame]) {
+      if (start === -1) start = frame;
+    } else {
+      flush(frame);
+    }
+  }
+  flush(flags.length);
+  return runs;
+}
+
+function analyzeMotion(file, { holdEps = MOTION_HOLD_EPS, minStatic = 0.6 } = {}) {
+  const probe = probeSummary(file);
+  if (!probe?.video) return null;
+  const fps = probe.video.fps || 30;
+  const tmp = path.join(ROOT, ".hyperframes", "motion-analysis.raw");
+  ensureDir(path.dirname(tmp));
+  rmSync(tmp, { force: true });
+  const result = run("ffmpeg", [
+    "-hide_banner",
+    "-v",
+    "error",
+    "-y",
+    "-i",
+    file,
+    "-an",
+    "-vf",
+    `scale=${MOTION_WIDTH}:${MOTION_HEIGHT}:flags=area,format=gray`,
+    "-f",
+    "rawvideo",
+    tmp,
+  ]);
+  if (result.status !== 0) return null;
+  const buffer = readFileSync(tmp);
+  const size = MOTION_WIDTH * MOTION_HEIGHT;
+  const probedFrames = Math.max(1, Math.round(probe.duration * fps));
+  const frames = Math.min(Math.floor(buffer.length / size), probedFrames);
+  if (!frames) return null;
+
+  const motion = new Float64Array(frames);
+  const stds = new Float64Array(frames);
+  const ranges = new Float64Array(frames);
+  let previous = null;
+  for (let frame = 0; frame < frames; frame++) {
+    const offset = frame * size;
+    let sum = 0;
+    let sumSquares = 0;
+    let min = 255;
+    let max = 0;
+    let difference = 0;
+    for (let pixel = 0; pixel < size; pixel++) {
+      const value = buffer[offset + pixel];
+      sum += value;
+      sumSquares += value * value;
+      if (value < min) min = value;
+      if (value > max) max = value;
+      if (previous) difference += Math.abs(value - previous[pixel]);
+    }
+    const mean = sum / size;
+    const variance = Math.max(0, sumSquares / size - mean * mean);
+    stds[frame] = Math.sqrt(variance);
+    ranges[frame] = max - min;
+    motion[frame] = previous ? difference / size : 0;
+    previous = buffer.subarray(offset, offset + size);
+  }
+
+  const emptyFlags = Array.from({ length: frames }, (_, frame) => stds[frame] < MOTION_FLAT_STD && ranges[frame] < MOTION_FLAT_RANGE);
+  const stillFlags = Array.from({ length: frames }, (_, frame) => frame > 0 && motion[frame] < holdEps);
+  const emptyRuns = collectRuns(emptyFlags, 4).map((run) => ({
+    ...run,
+    start: run.startFrame / fps,
+    end: (run.endFrame + 1) / fps,
+    seconds: (run.endFrame - run.startFrame + 1) / fps,
+  }));
+  const staticRuns = collectRuns(stillFlags, Math.max(2, Math.round(minStatic * fps))).map((run) => ({
+    ...run,
+    start: run.startFrame / fps,
+    end: (run.endFrame + 1) / fps,
+    seconds: (run.endFrame - run.startFrame + 1) / fps,
+  }));
+
+  let endHoldFrames = 0;
+  for (let frame = frames - 1; frame > 0 && motion[frame] < holdEps; frame--) endHoldFrames++;
+  const sortedMotion = Array.from(motion.slice(1)).sort((a, b) => a - b);
+
+  return {
+    file,
+    duration: probe.duration,
+    fps,
+    frames,
+    frameMotion: motion,
+    motion: {
+      median: percentile(sortedMotion, 0.5),
+      p10: percentile(sortedMotion, 0.1),
+      p25: percentile(sortedMotion, 0.25),
+      p75: percentile(sortedMotion, 0.75),
+      p90: percentile(sortedMotion, 0.9),
+      stillShare: stillFlags.filter(Boolean).length / Math.max(1, frames - 1),
+    },
+    emptyRuns,
+    staticRuns,
+    endHoldSeconds: endHoldFrames / fps,
+    thresholds: { holdEps, minStatic, flatStd: MOTION_FLAT_STD, flatRange: MOTION_FLAT_RANGE },
+    band: MOTION_BAND,
+  };
+}
+
+function motionShotStats(analysis, timeline) {
+  if (!analysis || !timeline?.shots?.length) return [];
+  return timeline.shots.map((shot) => {
+    const from = Math.max(0, Math.round(shot.start * analysis.fps));
+    const to = Math.min(analysis.frames, Math.round((shot.start + shot.duration) * analysis.fps));
+    const values = [];
+    for (let frame = from; frame < to; frame++) values.push(analysis.frameMotion[frame]);
+    const sorted = values.sort((a, b) => a - b);
+    let longest = 0;
+    let run = 0;
+    for (let frame = from; frame < to; frame++) {
+      if (frame > 0 && analysis.frameMotion[frame] < analysis.thresholds.holdEps) {
+        run++;
+        if (run > longest) longest = run;
+      } else {
+        run = 0;
+      }
+    }
+    return {
+      id: shot.id,
+      start: shot.start,
+      duration: shot.duration,
+      medianMotion: percentile(sorted, 0.5),
+      longestStill: longest / analysis.fps,
+    };
+  });
+}
+
+function motionVerdicts(analysis, timeline, { maxStatic = 3.0 } = {}) {
+  const problems = [];
+  const warnings = [];
+  const notes = [];
+  const shots = motionShotStats(analysis, timeline);
+  const finalShot = timeline?.shots?.at(-1);
+  const timelineMatches =
+    !timeline?.duration || Math.abs(timeline.duration - analysis.duration) <= 1;
+  const finalShare =
+    finalShot && analysis.duration > 0 && timelineMatches
+      ? finalShot.duration / analysis.duration
+      : null;
+  const shotAt = (time) => {
+    const shot = timeline?.shots?.find((item) => time >= item.start && time < item.end);
+    return shot?.id ?? null;
+  };
+
+  for (const run of analysis.emptyRuns)
+    problems.push(
+      `flat field ${run.start.toFixed(2)}-${run.end.toFixed(2)}s (${run.seconds.toFixed(2)}s) — no picture`,
+    );
+  if (analysis.endHoldSeconds > MOTION_HOLD_WARN)
+    problems.push(`end hold ${analysis.endHoldSeconds.toFixed(2)}s, limit ${MOTION_HOLD_WARN}s`);
+
+  for (const run of analysis.staticRuns) {
+    const shot = shotAt(run.start);
+    const label = `${shot ? `${shot} ` : ""}${run.start.toFixed(2)}-${run.end.toFixed(2)}s (${run.seconds.toFixed(2)}s)`;
+    if (run.seconds >= maxStatic) problems.push(`static ${label}, limit ${maxStatic}s`);
+    else warnings.push(`static ${label}`);
+  }
+  if (finalShare != null && finalShare > 0.25)
+    warnings.push(`final shot is ${(finalShare * 100).toFixed(0)}% of the film, limit 25%`);
+  if (analysis.motion.median < analysis.band.low)
+    notes.push(
+      `median motion ${analysis.motion.median.toFixed(2)} is below the human band ${analysis.band.low}-${analysis.band.high}: check what is alive between beats`,
+    );
+  if (analysis.motion.median > analysis.band.high)
+    notes.push(
+      `median motion ${analysis.motion.median.toFixed(2)} is above the human band ${analysis.band.low}-${analysis.band.high}: check whether the picture is too busy to read`,
+    );
+
+  return { problems, warnings, notes, shots, finalShare };
+}
+
+async function cmdMotion() {
+  const slug = requireSlug();
+  const cfg = videoConfig(slug);
+  const dir = videoDir(slug);
+  const file = flags.file
+    ? path.isAbsolute(flags.file)
+      ? flags.file
+      : path.join(dir, flags.file)
+    : path.join(dir, "renders", `${slug}.mp4`);
+  if (!existsSync(file)) fail(`Missing ${file}. Render first.`);
+
+  const holdEps = Number(flags.hold ?? MOTION_HOLD_EPS);
+  const minStatic = Number(flags["min-static"] ?? 0.6);
+  const maxStatic = Number(flags["max-static"] ?? 3.0);
+  const analysis = analyzeMotion(file, { holdEps, minStatic });
+  if (!analysis) fail(`motion: ffmpeg could not analyse ${file}`);
+  const loaded = loadEpisode(dir, cfg, { allowLegacy: true });
+  const { problems, warnings, notes, shots, finalShare } = motionVerdicts(
+    analysis,
+    loaded?.timeline,
+    { maxStatic },
+  );
+
+  const report = {
+    ok: problems.length === 0,
+    file,
+    duration: analysis.duration,
+    fps: analysis.fps,
+    frames: analysis.frames,
+    band: analysis.band,
+    motion: analysis.motion,
+    thresholds: {
+      ...analysis.thresholds,
+      endHoldLimit: MOTION_HOLD_WARN,
+      maxStatic,
+    },
+    endHoldSeconds: analysis.endHoldSeconds,
+    finalShotShare: finalShare,
+    emptyRuns: analysis.emptyRuns,
+    staticRuns: analysis.staticRuns,
+    shots,
+    problems,
+    warnings,
+    notes,
+  };
+  writeJSON(path.join(dir, "publish/motion.json"), report);
+
+  if (flags.json) {
+    console.log(JSON.stringify(report, null, 2));
+  } else {
+    info("");
+    info(`file        ${file}`);
+    info(`duration    ${analysis.duration.toFixed(2)}s  ${analysis.frames} frames @ ${analysis.fps}fps`);
+    info(
+      `motion      median ${analysis.motion.median.toFixed(2)}  p25/p75 ${analysis.motion.p25.toFixed(2)}/${analysis.motion.p75.toFixed(2)}  p10/p90 ${analysis.motion.p10.toFixed(2)}/${analysis.motion.p90.toFixed(2)}  (band ${analysis.band.low}-${analysis.band.high})`,
+    );
+    info(`end hold    ${analysis.endHoldSeconds.toFixed(2)}s (limit ${MOTION_HOLD_WARN}s)`);
+    info(`final shot  ${finalShare == null ? "n/a" : `${(finalShare * 100).toFixed(0)}%`}`);
+    info(`still share ${(analysis.motion.stillShare * 100).toFixed(1)}% of frames below ${holdEps}`);
+    if (analysis.emptyRuns.length) info(`flat fields ${analysis.emptyRuns.length} (fails)`);
+    if (shots.length) {
+      info("");
+      info(`shot                  median  longest still`);
+      for (const shot of shots)
+        info(
+          `  ${String(shot.id).padEnd(18)} ${shot.medianMotion.toFixed(2).padStart(7)}  ${shot.longestStill.toFixed(2).padStart(6)}s`,
+        );
+    }
+    for (const note of notes) info(`  note: ${note}`);
+    for (const warning of warnings) info(`  warning: ${warning}`);
+    for (const problem of problems) info(`  problem: ${problem}`);
+  }
+
+  if (problems.length) fail(`motion: ${problems.length} problem(s)`);
+  if (flags.strict && warnings.length) fail(`motion: ${warnings.length} warning(s) under --strict`);
+  if (!flags.json) ok(`motion: ${shots.length} shot(s) measured, no static stretch >= ${maxStatic}s`);
 }
 
 function measureLoudnorm(file) {
@@ -1467,6 +1998,37 @@ async function cmdQa() {
     }
   }
 
+  let motion = null;
+  if (flags.motion) {
+    info("Measuring motion ...");
+    const analysis = analyzeMotion(file, {
+      holdEps: Number(flags.hold ?? MOTION_HOLD_EPS),
+      minStatic: Number(flags["min-static"] ?? 0.6),
+    });
+    if (!analysis) warnings.push("motion analysis failed");
+    else {
+      const verdict = motionVerdicts(analysis, loaded?.timeline, {
+        maxStatic: Number(flags["max-static"] ?? 3.0),
+      });
+      problems.push(...verdict.problems);
+      warnings.push(...verdict.warnings);
+      motion = {
+        duration: analysis.duration,
+        fps: analysis.fps,
+        frames: analysis.frames,
+        band: analysis.band,
+        motion: analysis.motion,
+        endHoldSeconds: analysis.endHoldSeconds,
+        finalShotShare: verdict.finalShare,
+        emptyRuns: analysis.emptyRuns,
+        staticRuns: analysis.staticRuns,
+        shots: verdict.shots,
+        notes: verdict.notes,
+      };
+      for (const note of verdict.notes) info(`  note: ${note}`);
+    }
+  }
+
   const report = {
     file,
     duration: probe.duration,
@@ -1475,6 +2037,7 @@ async function cmdQa() {
     audio: probe.audio,
     loudness: lufs,
     render: readJSON(path.join(dir, "publish/render.json")),
+    motion,
     captions: {
       file: existsSync(captionsFile) ? captionsFile : null,
       cues: captionCues,
@@ -1717,6 +2280,12 @@ switch (command) {
     break;
   case "snapshot":
     await cmdSnapshot();
+    break;
+  case "golden":
+    await cmdGolden();
+    break;
+  case "motion":
+    await cmdMotion();
     break;
   case "render":
     await cmdRender();
