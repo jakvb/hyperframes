@@ -87,7 +87,7 @@ Usage: node harness/cli.mjs <command> [slug] [flags]
 Commands:
   new <slug> [--title "..."]     Scaffold videos/<slug> with a HyperFrames project
   agents [slug]                  (Re)write per-video AGENTS.md/CLAUDE.md shims that point at
-                                 ../../AGENTS.md and mandate /yt-education-video
+                                 ../../AGENTS.md and the episode pipeline
   list                           List videos
   migrate <slug> [--force]       Build episode.json from existing beats + STORYBOARD
   compile <slug> [--no-html] [--check]
@@ -214,7 +214,7 @@ async function cmdNew() {
   });
 
   // hyperframes init writes its own AGENTS.md/CLAUDE.md; replace with the workspace shim so
-  // agents landing in the project dir still follow ../../AGENTS.md and /yt-education-video.
+  // agents landing in the project dir still follow ../../AGENTS.md and the episode pipeline.
   writeVideoContext(dir, slug);
 
   ok(`videos/${slug}`);
