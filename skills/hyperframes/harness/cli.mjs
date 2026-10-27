@@ -126,6 +126,12 @@ Commands:
   qa <slug> [--file renders/x.mp4] [--skip-captions] [--no-chapters] [--motion] [--strict]
                                  Verify duration, streams, loudness, freeze, chapters, captions;
                                  --motion adds dead frames, static stretches and end hold
+  mix <slug> [--gap 18] [--strict] [--json]
+                                 Measure every audio source separately; warn when the music is
+                                 too close to the voice or MUSIC.md disagrees with data-volume
+  audit <slug> [--strict] [--json]
+                                 Pre-render audit: text under 24px, web-page chrome, pixel
+                                 transformOrigins on SVG
   thumbnail <slug> [--at 4]       Capture a caption-free 1280x720 thumbnail
   package <slug> [--thumb-time 0.5]
                                  Write publish/youtube.md, chapters and publish/thumbnail.jpg
@@ -2205,6 +2211,194 @@ async function cmdPackage() {
   ok(`package ${out} (${timeline.chapters.length} chapters)`);
 }
 
+function audioTags(html) {
+  return [...html.matchAll(/<audio\b[^>]*>/g)].map((match) => {
+    const attrs = {};
+    for (const attr of match[0].matchAll(/([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*"([^"]*)"/g)) {
+      attrs[attr[1]] = attr[2];
+    }
+    return attrs;
+  });
+}
+
+function kindOfAudio(tag) {
+  const id = tag.id ?? "";
+  const src = tag.src ?? "";
+  if (/music/i.test(id) || /\/music\//i.test(src)) return "music";
+  if (/^vo-|voice/i.test(id) || /\/voice\//i.test(src)) return "voice";
+  return "sfx";
+}
+
+async function cmdMix() {
+  const slug = requireSlug();
+  const dir = videoDir(slug);
+  videoConfig(slug);
+  const indexFile = path.join(dir, "index.html");
+  if (!existsSync(indexFile)) fail(`Missing videos/${slug}/index.html`);
+  const tags = audioTags(readFileSync(indexFile, "utf8"));
+  if (!tags.length) fail(`No <audio> elements in videos/${slug}/index.html`);
+
+  const targetGap = Number(flags.gap ?? 18);
+  const cache = new Map();
+  const report = [];
+  const warnings = [];
+
+  for (const tag of tags) {
+    const id = tag.id ?? "(no id)";
+    if (!tag.src) {
+      warnings.push(`${id}: no src`);
+      continue;
+    }
+    const file = path.join(dir, tag.src);
+    if (!existsSync(file)) {
+      warnings.push(`${id}: missing ${tag.src}`);
+      continue;
+    }
+    if (!cache.has(file)) cache.set(file, loudness(file));
+    const measured = cache.get(file);
+    if (!measured || !Number.isFinite(measured.integrated)) {
+      const probe = probeSummary(file);
+      if (kindOfAudio(tag) === "sfx" && probe?.duration && probe.duration < 1) {
+        continue;
+      }
+      warnings.push(`${id}: could not measure ${tag.src}`);
+      continue;
+    }
+    const volume = Number(tag["data-volume"] ?? 1);
+    const gain = 20 * Math.log10(Math.max(volume, 0.0001));
+    report.push({
+      id,
+      kind: kindOfAudio(tag),
+      src: tag.src,
+      volume,
+      lufs: measured.integrated,
+      effective: measured.integrated + gain,
+      peak: measured.truePeak + gain,
+    });
+  }
+
+  const voices = report.filter((item) => item.kind === "voice");
+  const music = report.filter((item) => item.kind === "music");
+  if (voices.length && music.length) {
+    const voiceLevel = Math.max(...voices.map((item) => item.effective));
+    const musicLevel = Math.max(...music.map((item) => item.effective));
+    const gap = voiceLevel - musicLevel;
+    if (gap < targetGap) {
+      warnings.push(
+        `music is ${gap.toFixed(1)} dB under the loudest voice; target at least ${targetGap} dB`,
+      );
+    }
+
+    const musicDoc = path.join(dir, "MUSIC.md");
+    if (existsSync(musicDoc)) {
+      const documented = readFileSync(musicDoc, "utf8").match(/volume\s+([0-9]*\.?[0-9]+)/i);
+      if (documented) {
+        const expected = Number(documented[1]);
+        for (const item of music) {
+          if (Math.abs(item.volume - expected) > 0.02) {
+            warnings.push(
+              `${item.id}: data-volume ${item.volume} but MUSIC.md says ${expected}`,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  if (flags.json) {
+    console.log(JSON.stringify({ report, warnings }, null, 2));
+    return;
+  }
+
+  info(`audio  ${slug}`);
+  info("  kind   id                         volume   lufs   effective   peak");
+  for (const item of report) {
+    info(
+      `  ${item.kind.padEnd(6)} ${item.id.padEnd(26)} ${item.volume
+        .toFixed(2)
+        .padStart(5)} ${item.lufs.toFixed(1).padStart(7)} ${item.effective
+        .toFixed(1)
+        .padStart(9)} ${item.peak.toFixed(1).padStart(7)}`,
+    );
+  }
+  if (voices.length && music.length) {
+    const voiceLevel = Math.max(...voices.map((item) => item.effective));
+    const musicLevel = Math.max(...music.map((item) => item.effective));
+    info(`  music under voice: ${(voiceLevel - musicLevel).toFixed(1)} dB`);
+  }
+  for (const warning of warnings) info(`  warning: ${warning}`);
+  if (flags.strict && warnings.length) fail(`mix check failed (${warnings.length} warning(s))`);
+  ok(`mix check passed (${warnings.length} warning(s))`);
+}
+
+function listHtml(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...listHtml(full));
+    else if (entry.isFile() && entry.name.endsWith(".html")) out.push(full);
+  }
+  return out;
+}
+
+function cmdAudit() {
+  const slug = requireSlug();
+  const dir = videoDir(slug);
+  videoConfig(slug);
+  const comps = path.join(dir, "compositions");
+  const files = existsSync(comps) ? listHtml(comps) : [];
+  if (!files.length) fail(`No composition HTML under videos/${slug}/compositions`);
+
+  const WEB = [
+    "card", "cards", "carousel", "navbar", "nav", "button", "btn", "pill", "chip",
+    "badge", "eyebrow", "kpi", "dashboard", "tab", "tabs", "accordion", "testimonial",
+  ];
+  const findings = [];
+  let tinyTotal = 0;
+  for (const file of files) {
+    const text = readFileSync(file, "utf8");
+    const rel = path.relative(dir, file);
+    const tiny = [...text.matchAll(/font-size\s*:\s*([0-9.]+)px/g)]
+      .map((match) => Number(match[1]))
+      .filter((size) => size < 24);
+    const origin = [...text.matchAll(/transformOrigin\s*:\s*["']?([0-9.]+)px\s+([0-9.]+)px/g)];
+    const web = WEB.filter((word) => new RegExp(`\\b${word}\\b`, "i").test(text));
+    if (tiny.length || origin.length || web.length) {
+      tinyTotal += tiny.length;
+      findings.push({
+        rel,
+        tiny: [...new Set(tiny)].sort((a, b) => a - b),
+        tinyCount: tiny.length,
+        origins: origin.map((match) => `${match[1]}px ${match[2]}px`),
+        web,
+      });
+    }
+  }
+
+  if (flags.json) {
+    console.log(JSON.stringify({ files: findings.length, tinyTotal, findings }, null, 2));
+    return;
+  }
+
+  info(`audit  ${slug}`);
+  for (const finding of findings) {
+    const parts = [];
+    if (finding.tinyCount) {
+      parts.push(`${finding.tinyCount} text rule(s) under 24px (${finding.tiny.join(", ")})`);
+    }
+    if (finding.origins.length) {
+      parts.push(`pixel transformOrigin ${finding.origins.join(", ")} on SVG candidate`);
+    }
+    if (finding.web.length) parts.push(`web chrome: ${finding.web.join(", ")}`);
+    info(`  ${finding.rel}: ${parts.join("; ")}`);
+  }
+  info(`  ${findings.length} file(s), ${tinyTotal} small text rule(s)`);
+  if (flags.strict && findings.length) {
+    fail(`audit found ${findings.length} file(s) to review`);
+  }
+  ok(`audit complete (${findings.length} file(s) to review)`);
+}
+
 async function cmdDoctor() {
   const report = hfJSON(["doctor", "--json"]);
   for (const check of report.checks ?? []) {
@@ -2298,6 +2492,12 @@ switch (command) {
     break;
   case "qa":
     await cmdQa();
+    break;
+  case "mix":
+    await cmdMix();
+    break;
+  case "audit":
+    cmdAudit();
     break;
   case "thumbnail":
     await cmdThumbnail();

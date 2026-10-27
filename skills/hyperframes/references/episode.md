@@ -302,6 +302,8 @@ npx hyperframes transcribe assets/voice/01-question.wav --to srt -o assets/voice
 ## 9. Review and QA
 
 ```bash
+node <this-skill>/harness/cli.mjs mix <slug> [--gap 18]
+node <this-skill>/harness/cli.mjs audit <slug>
 node <this-skill>/harness/cli.mjs check <slug>
 node <this-skill>/harness/cli.mjs snapshot <slug> --review
 node <this-skill>/harness/cli.mjs render <slug> --quality delivery
@@ -311,6 +313,10 @@ node <this-skill>/harness/cli.mjs qa <slug>
 The QA gate checks:
 
 - `check --json`: 0 errors, contrast at least 4.5:1 for text, no overflow, no static sweep failure.
+- `mix`: every voice, music and SFX source measured on its own, not only the mixed master; the music
+  is at least `--gap` dB under the loudest voice (default 15) and `data-volume` matches `MUSIC.md`.
+- `audit`: no text rule under 24 px, no web-page chrome, no pixel `transformOrigin` on an SVG
+  candidate; warnings are reviewed, `--strict` turns them into a failure.
 - Duration: `ffprobe` duration within 0.1 s of the root `data-duration`.
 - Streams: 1920x1080 (or declared), 30 fps constant, H.264 High/yuv420p, AAC 48 kHz.
 - Loudness: integrated between -15.5 and -13.0 LUFS; true peak at most -1 dBTP.
@@ -408,6 +414,8 @@ node <this-skill>/harness/cli.mjs tts <slug> [--voice af_heart] [--speed 1.0]
 node <this-skill>/harness/cli.mjs sync <slug> [--tail 0.3]   # shots, hosts, audio clips, chapters
 node <this-skill>/harness/cli.mjs captions <slug>            # word-timed captions + WER report
 node <this-skill>/harness/cli.mjs lint-script <slug> [--strict]
+node <this-skill>/harness/cli.mjs audit <slug>               # small text, web chrome, SVG origins
+node <this-skill>/harness/cli.mjs mix <slug> [--gap 18]      # per-source loudness, music vs voice
 node <this-skill>/harness/cli.mjs check <slug> [--strict]
 node <this-skill>/harness/cli.mjs snapshot <slug> --review
 node <this-skill>/harness/cli.mjs render <slug> --quality delivery
