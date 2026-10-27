@@ -12,7 +12,7 @@ YAML block at the top. Unknown keys are kept under `globals.extra`.
 | ---------- | ------------------------------------------------------------ | ----------------------------------------- |
 | `format`   | Canvas size                                                  | `1920x1080`                               |
 | `duration` | The length the person asked for (advisory, not a hard limit) | `22s`                                     |
-| `message`  | One-line thesis                                              | `Ship a launch video in an afternoon`     |
+| `message`  | Through-line question (deep dive) or one-line message        | `Why did the prediction come out wrong?`  |
 | `arc`      | Narrative arc                                                | `Hook → Problem → Solution → Proof → CTA` |
 | `audience` | Who it's for                                                 | `indie devs on X`                         |
 | `mode`     | Interaction mode (default collaborative)                     | `autonomous`                              |
@@ -86,7 +86,7 @@ audience: indie devs on X
 - sound: bed enters on its strongest bar; impact on "afternoon"
 - src: compositions/frames/01-hook.html
 
-Open cold on the promise. This is the thesis — everything after pays it off.
+Open cold on the promise; everything after pays it off.
 
 ## Frame 2 — The problem
 

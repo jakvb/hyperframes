@@ -70,7 +70,7 @@ Footage / 3D: <source> (<licence>)
 
 - Last 20 seconds; no critical information.
 - One next-video slot and one subscribe slot.
-- Leave the final thesis line visible for at least 2 seconds before the end screen.
+- Leave the final answer line visible for at least 2 seconds before the end screen.
 
 ## Pre-upload checklist
 

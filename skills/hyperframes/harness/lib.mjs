@@ -327,9 +327,10 @@ with a skill, the workspace file and the skill win.
 ## Read in this order, every session
 
 1. \`../../AGENTS.md\` - workspace rules 1-12: truth ledger, \`episode.json\`, the gate, the audit trail.
-2. \`/hyperframes\` - the render contract and work loop, then \`/hyperframes/references/episode.md\`
-   for the episode pipeline: truth ledger, thesis, narration timing, captions, audio, QA gates and
-   YouTube packaging. **Always**, before planning, scripting or rendering.
+2. \`/hyperframes\` - the render contract and work loop; then
+   \`/hyperframes/references/episode.md\` for the deep-dive pipeline: through-line question,
+   narrative arc, narration timing, captions, audio, QA gates and YouTube packaging. **Always**,
+   before planning, scripting or rendering.
 3. \`/hyperframes-cli\` for commands, \`/hyperframes-registry\` before hand-building a named visual,
    \`/media-use\` for voice, music, footage.
 4. \`/humanizer\` before writing any prose.
@@ -338,11 +339,14 @@ with a skill, the workspace file and the skill win.
 
 - \`episode.json\` is the machine source of truth: beats own narration and claims, shots own picture
   time. Edit it, then \`node ../../harness/cli.mjs compile ${slug}\`. Never hand-edit generated durations.
-- \`BRIEF.md\` and \`SOURCES.md\` are filled before the script; every on-screen number carries a claim id.
+- \`BRIEF.md\` and \`SOURCES.md\` are filled before the script; every factual claim carries a claim id
+  or a \`derivation\` label.
 - Gate after every structural change: \`compile\` -> \`check\` -> \`snapshot --review\`, then render.
 - \`node ../../harness/cli.mjs qa ${slug}\` must pass before upload.
 - Deterministic compositions only: no \`Date.now()\`, no unseeded \`Math.random()\`, no network fetches.
-- One thesis, one concrete spine, one diagram that grows. No bullet slides, no three cards.
+- One through-line question and one visual world that changes; a deep dive runs question -> old
+  picture -> crack -> rebuild -> test -> consequence, with a real low and a real high. No bullet
+  slides, no three cards.
 
 ## HyperFrames essentials (full contract in \`/hyperframes\`)
 

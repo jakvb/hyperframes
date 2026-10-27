@@ -2,25 +2,27 @@
 
 Generated from `episode.json`; edit the manifest and run `compile`, not this file.
 
-Target: <minutes> at 155 wpm => <words> words. Thesis: <one sentence>.
+Target: <minutes> at 155 wpm => <words> words. Through-line question: <one open question>.
 
-| beat | target | narration file | visual job | viewer reads | claims |
-|---|---|---|---|---|---|
-| 01-hook | 0:00-0:12 | beats/01-hook.txt | question + first concrete image | <line> | C1 |
-| 02-context | 0:12-1:10 | beats/02-context.txt | the world and the stakes | | |
-| 03-mechanism-1 | 1:10-2:05 | beats/03-mechanism-1.txt | first part of the object | | |
-| 04-mechanism-2 | 2:05-3:00 | beats/04-mechanism-2.txt | second part, one diagram grows | | |
-| 05-evidence | 3:00-4:00 | beats/05-evidence.txt | the number/experiment | | |
-| 06-complication | 4:00-5:00 | beats/06-complication.txt | the failure, limit or debate | | |
-| 07-payoff | 5:00-6:00 | beats/07-payoff.txt | the biggest visual moment, once | | |
-| 08-implication | 6:00-6:30 | beats/08-implication.txt | the one idea, one line | | |
+| beat | target | narration file | visual job | viewer reads | belief after | claims |
+|---|---|---|---|---|---|---|
+| 01-question | 0:00-0:50 | beats/01-question.txt | the anomaly, the stakes, the first image | <line> | something does not add up | C1 |
+| 02-old-picture | 0:50-2:40 | beats/02-old-picture.txt | the old explanation working | | that seems to work | C2 |
+| 03-crack | 2:40-4:40 | beats/03-crack.txt | the measurement, failure or rival that does not fit | | the old answer cannot be right | C3 |
+| 04-rebuild-1 | 4:40-6:10 | beats/04-rebuild-1.txt | premise -> consequence, step one | | I can see why it must be so | |
+| 05-rebuild-2 | 6:10-7:30 | beats/05-rebuild-2.txt | the next premise, the new picture completes | | I could predict that | |
+| 06-test | 7:30-8:50 | beats/06-test.txt | the decisive prediction or measurement lands | | it is true | C4 |
+| 07-consequence | 8:50-9:40 | beats/07-consequence.txt | what changed, what remains open, return to the opening | | I can explain it and its limits | |
 
 ## Read-aloud pass
 
 - [ ] Every sentence is speakable in one breath.
 - [ ] No sentence repeats the on-screen text word for word.
-- [ ] Every number has a unit and a comparison.
-- [ ] No claim outside `SOURCES.md`.
+- [ ] Every beat changes belief or stakes; no number or fact is only decorative.
+- [ ] Each rebuild step follows from the premise before it.
+- [ ] Dates and names appear only where they turn the story.
+- [ ] Every on-screen number has a unit, a comparison and a claim id.
+- [ ] No claim outside `SOURCES.md`; derived steps are labelled `derivation`.
 - [ ] First 15 seconds contain the question, the stakes and a concrete image.
-- [ ] Last line is the thesis, not a recap.
+- [ ] The ending answers the opening question and names one limit, not a recap.
 - [ ] Word count is within 10% of the target.

@@ -188,7 +188,7 @@ async function cmdNew() {
     speed: 1.0,
     tailSeconds: 0.3,
     message: "",
-    arc: "Question -> Context -> Mechanism -> Evidence -> Complication -> Payoff -> Implication",
+    arc: "Question -> Old picture -> Crack -> Rebuild -> Test -> Consequence",
     audience: "",
     beats: [],
   });
@@ -857,11 +857,6 @@ async function cmdLintScript() {
     for (const phrase of banned) {
       if (lower.includes(phrase)) warnings.push(`${beat.id}: banned phrase "${phrase}"`);
     }
-    const numberWords =
-      /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|percent|half|twice|double)\b/i;
-    if (!/\d/.test(text) && !numberWords.test(text)) {
-      warnings.push(`${beat.id}: no number or concrete quantity`);
-    }
     const beatClaims = scriptClaims.get(beat.id) ?? [];
     const numbers = numericClaims(text);
     const labelled = beatClaims.some((claim) =>
@@ -957,7 +952,8 @@ async function cmdLintScript() {
   else {
     const brief = readFileSync(briefFile, "utf8");
     if (!/\*\*Promise\*\*/.test(brief)) warnings.push("BRIEF.md has no Promise line");
-    if (!/\*\*One-sentence thesis\*\*/i.test(brief)) warnings.push("BRIEF.md has no thesis line");
+    if (!/\*\*(Through-line question|One-sentence thesis)\*\*/i.test(brief))
+      warnings.push("BRIEF.md has no through-line question");
   }
 
   const estimated = totalWords / 2.58;

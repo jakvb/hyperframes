@@ -9,6 +9,7 @@ Skip it for an edit to an existing project, captions or overlays on footage, and
 - **What it is**, in one line: "You can now …" for a launch, the one idea the viewer must understand for an explainer, what changed and why it matters for a pull request. A whole release ("2.0", "what's new") is not one thing: take its headline.
 - **The one thing to remember** after the film ends, in the viewer's words, not the brand slogan.
 - **One viewer doing one real task**, from the moment they need it to the result. That task is the spine, and one real piece of data (a query, a file, a prompt, a number) travels through it from the hook to the payoff. An explainer's spine is one concrete example worked through.
+- A narrated deep dive (4-15 minutes) replaces the one-thing spine with an open **question** and a visual world that changes as the answer is built: question, old picture, crack, rebuild, test, consequence. Several examples may serve that arc; none of them is a second spine. `episode.md` owns that shape, and it overrides the one-example rule here.
 - Keep facts (what it does, real numbers, real labels) apart from creative choices (angle, tone, look). Every claim on screen traces to the source: the site, the PR, the docs or the person's words. Use the person's own copy verbatim.
 - What the source does not say stays unsaid: never derive a claim it did not make ("40 min to 2 min" is not "20× faster"), mark an example number as illustrative, and show a screen you cannot get as a labelled placeholder, not a drawn one.
 

@@ -2,7 +2,27 @@
 
 One idea the viewer understands by the end (`../story.md` §1). The spine is one concrete example worked through, start to finish, not a tour of facts. Usually 30–90 s.
 
-A narrated educational episode of 4-15 minutes runs the same craft through the production pipeline: truth ledger, episode manifest, narration timing, captions, QA and YouTube packaging. Read `../episode.md` before the script.
+A narrated educational episode of 4-15 minutes is a different shape: a deep dive that earns the idea through a story. Read `../episode.md` before the script.
+
+## Deep dives (4-15 minutes)
+
+The short explainer above states an idea and pays it off; a deep dive shows how the idea was made, where it broke, and how it was rebuilt. Its through-line is a **question**, not a thesis, and it runs six movements:
+
+1. **Question** - an observation that does not fit, the stakes, the first image.
+2. **Old picture** - how people explained it before, and why that explanation was convincing.
+3. **Crack** - the anomaly, failed experiment, argument or rival; the low point.
+4. **Rebuild** - derive the new idea from premises the viewer already accepts, one visible step at a time.
+5. **Test** - the decisive prediction, measurement or use; the high point.
+6. **Consequence** - what changed, what it still cannot explain, return to the opening question.
+
+- The film must move in both directions: confidence falls at the crack and rises at the test. A tour with no low point has nothing to root for.
+- Explain by first principles. State the premise, show its consequence, then the next premise; the viewer should be able to predict each step before it lands. "Then scientists discovered..." is a cut, not an explanation.
+- A deep dive may use several people, experiments and numbers; none is a second spine. They are turns in one argument, and the same visual world is corrected as understanding changes.
+- Numbers are evidence at the turns, not the texture: one decisive number per movement, sourced, with a unit and a comparison.
+- A date or a name earns its place only by changing the story. A timeline read aloud is not history.
+- Worked examples are welcome; "one example" is not a requirement at this length.
+
+The rest of the arc, the claim ledger, the manifest and the QA gates are in `../episode.md`.
 
 ## Ground it first
 

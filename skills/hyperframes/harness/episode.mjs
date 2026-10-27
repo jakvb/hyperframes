@@ -193,6 +193,7 @@ export function buildTimeline(episode, timing, cfg = {}) {
       audioStart: round(cursor),
       audioDuration: round(audioSeconds),
       audio: beat.audio ?? `assets/voice/${beat.id}.wav`,
+      belief: beat.belief ?? null,
       claims: Array.isArray(beat.claims) ? beat.claims : [],
       shots,
     };
@@ -538,7 +539,7 @@ export function storyboardMarkdown(episode, timeline, existingBoard = null) {
     `format: ${timeline.width}x${timeline.height}`,
     `duration: ${secondsLabel(timeline.duration)}`,
     `message: ${JSON.stringify(oneLine(episode.message ?? existingBoard?.frontmatter?.message ?? episode.title ?? ""))}`,
-    `arc: ${oneLine(episode.arc ?? existingBoard?.frontmatter?.arc ?? "Question -> Context -> Mechanism -> Evidence -> Complication -> Payoff -> Implication")}`,
+    `arc: ${oneLine(episode.arc ?? existingBoard?.frontmatter?.arc ?? "Question -> Old picture -> Crack -> Rebuild -> Test -> Consequence")}`,
     `audience: ${JSON.stringify(oneLine(episode.audience ?? existingBoard?.frontmatter?.audience ?? ""))}`,
     `mode: ${oneLine(episode.mode ?? existingBoard?.frontmatter?.mode ?? "collaborative")}`,
     "---",
@@ -581,16 +582,20 @@ export function scriptMarkdown(episode, timeline, brief = "") {
   const promise = oneLine(
     episode.promise ?? brief.match(/-\s+\*\*Promise\*\*:\s*(.+)/)?.[1] ?? episode.title ?? "",
   );
-  const thesis = oneLine(
-    episode.thesis ?? brief.match(/-\s+\*\*One-sentence thesis\*\*[^:]*:\s*(.+)/)?.[1] ?? "",
+  const throughLine = oneLine(
+    episode.question ??
+      episode.thesis ??
+      brief.match(/-\s+\*\*Through-line question\*\*[^:]*:\s*(.+)/)?.[1] ??
+      brief.match(/-\s+\*\*One-sentence thesis\*\*[^:]*:\s*(.+)/)?.[1] ??
+      "",
   );
   const lines = [
     `# Script - ${episode.title ?? timeline.title ?? timeline.slug ?? "Untitled"}`,
     "",
-    `Target: ${chapterTime(timeline.duration)} at 155 wpm. Thesis: ${thesis || "(not set)"}`,
+    `Target: ${chapterTime(timeline.duration)} at 155 wpm. Through-line question: ${throughLine || "(not set)"}`,
     "",
-    "| beat | target | narration file | visual job | viewer reads | claims |",
-    "|---|---|---|---|---|---|",
+    "| beat | target | narration file | visual job | viewer reads | belief after | claims |",
+    "|---|---|---|---|---|---|---|",
   ];
   for (const beat of timeline.beats) {
     const visual = beat.shots
@@ -600,9 +605,10 @@ export function scriptMarkdown(episode, timeline, brief = "") {
       .map((shot) => oneLine(shot.reads ?? ""))
       .filter(Boolean)
       .join(" / ");
+    const belief = oneLine(beat.belief ?? "");
     const claims = beat.claims?.length ? beat.claims.join(", ") : "—";
     lines.push(
-      `| ${mdCell(beat.id)} | ${chapterTime(beat.start)}-${chapterTime(beat.end)} | ${mdCell(`beats/${beat.id}.txt`)} | ${mdCell(visual)} | ${mdCell(reads)} | ${mdCell(claims)} |`,
+      `| ${mdCell(beat.id)} | ${chapterTime(beat.start)}-${chapterTime(beat.end)} | ${mdCell(`beats/${beat.id}.txt`)} | ${mdCell(visual)} | ${mdCell(reads)} | ${mdCell(belief || "—")} | ${mdCell(claims)} |`,
     );
   }
   lines.push(
@@ -611,10 +617,13 @@ export function scriptMarkdown(episode, timeline, brief = "") {
     "",
     "- [ ] Every sentence is speakable in one breath.",
     "- [ ] No sentence repeats the on-screen text word for word.",
-    "- [ ] Every number has a unit and a comparison.",
-    "- [ ] No claim outside `SOURCES.md`.",
+    "- [ ] Every beat changes belief or stakes; no number or fact is only decorative.",
+    "- [ ] Each rebuild step follows from the premise before it.",
+    "- [ ] Dates and names appear only where they turn the story.",
+    "- [ ] Every on-screen number has a unit, a comparison and a claim id.",
+    "- [ ] No claim outside `SOURCES.md`; derived steps are labelled `derivation`.",
     "- [ ] First 15 seconds contain the question, the stakes and a concrete image.",
-    "- [ ] Last line is the thesis, not a recap.",
+    "- [ ] The ending answers the opening question and names one limit, not a recap.",
     "- [ ] Word count is within 10% of the target.",
     "",
     promise ? `Promise: ${promise}` : "",

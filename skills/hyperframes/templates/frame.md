@@ -7,7 +7,7 @@ description: >
   secondary carries structure. The unit is the 1920x1080 frame. No glow, no gradients, no floating
   cards, no serif pastiche.
 unit: the frame - 1920x1080 primary; 9:16 and 1:1 documented
-principle: the subject's own material · one accent per frame · numbers carry the argument
+principle: the subject's own material · one accent per frame · the mechanism carries the argument
 colors:
   bg: "#d8cfbf"
   ink: "#171512"

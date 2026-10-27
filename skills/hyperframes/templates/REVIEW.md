@@ -13,6 +13,16 @@
 |---|---|---|
 | | | |
 
+## Story checks
+
+- Question asked in the first 15 s:
+- Old picture convincing on screen:
+- Crack lands as a loss:
+- Each rebuild step predictable and earned:
+- Test is decisive, not another fact:
+- Ending answers the question and names a limit:
+- Any stretch that only conveys facts, with no turn:
+
 ## Look checks
 
 - Contrast:

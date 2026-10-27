@@ -25,6 +25,6 @@
 ## Checks
 
 - [ ] Voice survives phone speaker and headphones.
-- [ ] No music under the thesis line unless it is the point.
+- [ ] No music under the answer line unless it is the point.
 - [ ] No whoosh on every cut.
 - [ ] Master -14 LUFS / -1 dBTP.

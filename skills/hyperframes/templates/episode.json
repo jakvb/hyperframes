@@ -8,20 +8,21 @@
   "voice": "af_heart",
   "speed": 1.0,
   "tailSeconds": 0.3,
-  "message": "<one-line thesis>",
-  "arc": "Question -> Context -> Mechanism -> Evidence -> Complication -> Payoff -> Implication",
+  "message": "<through-line question, open at the start>",
+  "arc": "Question -> Old picture -> Crack -> Rebuild -> Test -> Consequence",
   "audience": "<who this is for>",
   "beats": [
     {
-      "id": "01-hook",
-      "title": "Hook",
-      "narration": "beats/01-hook.txt",
-      "audio": "assets/voice/01-hook.wav",
+      "id": "01-question",
+      "title": "The question",
+      "narration": "beats/01-question.txt",
+      "audio": "assets/voice/01-question.wav",
+      "belief": "something does not add up",
       "claims": ["C1"],
       "shots": [
         {
           "id": "01a",
-          "title": "The question",
+          "title": "The anomaly",
           "src": "compositions/frames/01a.html",
           "hostId": "scene-01a",
           "compositionId": "01a",
@@ -36,7 +37,7 @@
   "chapters": [
     {
       "title": "The question",
-      "beats": ["01-hook"]
+      "beats": ["01-question"]
     }
   ]
 }
