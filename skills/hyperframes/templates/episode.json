@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "slug": "<slug>",
+  "title": "<title>",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "voice": "af_heart",
+  "speed": 1.0,
+  "tailSeconds": 0.3,
+  "message": "<one-line thesis>",
+  "arc": "Question -> Context -> Mechanism -> Evidence -> Complication -> Payoff -> Implication",
+  "audience": "<who this is for>",
+  "beats": [
+    {
+      "id": "01-hook",
+      "title": "Hook",
+      "narration": "beats/01-hook.txt",
+      "audio": "assets/voice/01-hook.wav",
+      "claims": ["C1"],
+      "shots": [
+        {
+          "id": "01a",
+          "title": "The question",
+          "src": "compositions/frames/01a.html",
+          "hostId": "scene-01a",
+          "compositionId": "01a",
+          "seconds": 6,
+          "scene": "<one-line contact-sheet caption>",
+          "reads": "<what lands and when>",
+          "sound": "<bed, effect, or silence>"
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "title": "The question",
+      "beats": ["01-hook"]
+    }
+  ]
+}

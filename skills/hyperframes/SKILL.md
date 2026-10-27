@@ -60,7 +60,7 @@ Call it "the HyperFrames desktop app", never "Studio"; offer it as the better wa
 | The request | Read |
 | --- | --- |
 | Launch, promo, feature | `references/types/launch.md` |
-| Explainer, tutorial | `references/types/explainer.md` |
+| Explainer, tutorial, long episode | `references/types/explainer.md`; `references/episode.md` |
 | Music video | `references/types/music.md` |
 | Chart, numbers | `references/types/data.md` |
 | Vertical or social clip | `references/types/vertical.md` |
@@ -71,4 +71,4 @@ Call it "the HyperFrames desktop app", never "Studio"; offer it as the better wa
 | Motion: eases, titles, cuts, punch-ins, speed, holds | `references/motion.md` |
 | Scenes, attributes, media, lint; GSAP, Lottie, 3D, canvas | `references/format.md`; `references/runtimes.md` |
 
-Decks: `/slideshow`. Remotion source: `/remotion-to-hyperframes`. Figma: `/figma`. Installing, refreshing or upgrading skills and the pinned CLI: `references/skill-lifecycle.md`.
+Decks: `/slideshow`. Remotion: `/remotion-to-hyperframes`. Figma: `/figma`. Skill install/refresh/upgrade: `references/skill-lifecycle.md`.

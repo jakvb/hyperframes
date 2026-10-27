@@ -2,6 +2,8 @@
 
 One idea the viewer understands by the end (`../story.md` §1). The spine is one concrete example worked through, start to finish, not a tour of facts. Usually 30–90 s.
 
+A narrated educational episode of 4-15 minutes runs the same craft through the production pipeline: truth ledger, episode manifest, narration timing, captions, QA and YouTube packaging. Read `../episode.md` before the script.
+
 ## Ground it first
 
 Start where the viewer already is: a person, a place or a situation they know, and a question they would ask about it ("why does the astronaut come home younger than her twin?"). The abstract device (a light clock, a graph, a field) enters inside that situation, as the thing that answers the question, and the film returns to the person at the end with the answer. A film that opens on the device alone is a diagram, not an explainer.
