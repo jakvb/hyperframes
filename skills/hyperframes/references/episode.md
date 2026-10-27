@@ -134,6 +134,15 @@ Write for the ear, and write scenes, not claims.
 - **Write the story, not the summary**: a person, a place, an instrument, a failure, a decision.
   Concrete nouns and verbs; dates only when a date changes the story. A parade of years and names is
   not history, it is a timeline read aloud.
+- **Names**: the first mention uses the full name with the symbol or abbreviation in parentheses
+  ("mercury-198 (¹⁹⁸Hg)"), then the short form. No unexplained abbreviations, no label-only jargon.
+  Define each term on first use; a viewer who knows nothing about the topic must be able to follow.
+- **Text on screen**: as little as possible. No side notes, no legends, no captions repeating the
+  voice. If a word does not need to be read, it is not on screen.
+- **No metaphor as the mechanism**: describe what the thing actually does. A comparison is allowed
+  only when it maps exactly and the source uses it; otherwise it teaches the wrong picture.
+- **No judgement**: state what an idea claimed and what the evidence showed. Do not call people or
+  ideas stupid, do not moralise, do not hand down a verdict.
 - **First 15 seconds**: the anomaly or question, the stakes and the first concrete image. No
   throat-clearing, no "since the dawn of time", no roadmap.
 - **Open loops**: sharpen the question every 30-60 seconds, answer part of it, and hold the how and

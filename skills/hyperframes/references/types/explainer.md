@@ -44,6 +44,8 @@ Most explainable lines are one of a few shapes, and each has its own picture: a 
 - Narrated: the voice is the clock (`../sound.md` §2). Reveal each part when the voice names it, across the back half of the scene; keep a scene to about 19 spoken words (`../film.md` "Script and pacing").
 - Not narrated: large lines carry it, up to about 10 words, each held 0.5 s + 0.3 s a word.
 - Labels sit on the part they name, with a leader line when needed, and appear with it. No legends, no bullet slides.
+- Full name on first mention, short form after. No unexplained abbreviations, no label-only jargon.
+- As little text as possible; no side notes. No metaphor standing in for the mechanism; no judgement or verdict language.
 
 ## Getting it right
 

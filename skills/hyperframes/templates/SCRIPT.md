@@ -18,6 +18,9 @@ Target: <minutes> at 155 wpm => <words> words. Through-line question: <one open 
 
 - [ ] Every sentence is speakable in one breath.
 - [ ] No sentence repeats the on-screen text word for word.
+- [ ] First mention of every term uses the full name, short form after; no unexplained abbreviations.
+- [ ] No metaphor stands in for the mechanism; no judgement or verdict language.
+- [ ] Text on screen is the minimum; no side notes, no legends.
 - [ ] Every beat changes belief or stakes; no number or fact is only decorative.
 - [ ] Each rebuild step follows from the premise before it.
 - [ ] Dates and names appear only where they turn the story.
