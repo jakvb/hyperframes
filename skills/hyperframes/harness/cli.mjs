@@ -32,7 +32,6 @@ import {
   writeJSON,
   writeVideoContext,
   VIDEO_CONTEXT_FILES,
-  VIDEO_CONTEXT_MARKER,
 } from "./lib.mjs";
 import {
   buildTimeline,
@@ -1181,7 +1180,7 @@ async function cmdRender() {
 
 async function cmdCloud() {
   const slug = requireSlug();
-  const cfg = videoConfig(slug);
+  videoConfig(slug);
   const dir = videoDir(slug);
   const quality = flags.quality ?? "high";
   const output = flags.output ?? path.join("renders", `${slug}-cloud.mp4`);

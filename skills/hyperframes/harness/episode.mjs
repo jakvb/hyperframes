@@ -221,7 +221,7 @@ export function buildTimeline(episode, timing, cfg = {}) {
   };
 }
 
-function chapterRange(chapter, beats, total) {
+function chapterRange(chapter, beats) {
   const byId = new Map(beats.map((beat) => [beat.id, beat]));
   if (typeof chapter === "string") {
     const beat = byId.get(chapter);
@@ -255,9 +255,7 @@ function buildChapters(episode, beats, total) {
   const warnings = [];
   let chapters = [];
   if (Array.isArray(episode.chapters) && episode.chapters.length) {
-    chapters = episode.chapters
-      .map((chapter) => chapterRange(chapter, beats, total))
-      .filter(Boolean);
+    chapters = episode.chapters.map((chapter) => chapterRange(chapter, beats)).filter(Boolean);
   } else {
     let current = null;
     for (const beat of beats) {
