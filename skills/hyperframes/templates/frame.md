@@ -99,6 +99,8 @@ and say why in one clause.
 - Don't use a look just because it is easy to render; use it because the subject is made
   of that material.
 - Don't put three cards in a row or a bullet slide on the paper.
+- Don't import web-page chrome: navigation, buttons, pills, carousels, card grids, dashboards,
+  eyebrow labels, or labels below 24 px. Text meant to be read is at least 28 px.
 
 ## Motion
 

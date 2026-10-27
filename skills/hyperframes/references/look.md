@@ -2,6 +2,8 @@
 
 Left alone, the same brief comes out with the same look run after run, and banning that look only moves it to the next default. Outside input breaks it, in this order: the project's design spec, a real brand, a reference image or film the person gave you, the subject's own world. Settle it before the first scene, as numbers in the LOOK line (below).
 
+For how the frame is composed and how much text it carries, read `/video-design`; this file decides the tokens.
+
 ## The project's design spec
 
 Read the first of `frame.md`, `design.md`, `DESIGN.md` at the project root that exists; ignore the rest.

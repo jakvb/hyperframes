@@ -119,6 +119,9 @@ Research rules:
   `LOOK-NOT-CHOSEN`; fill it from the subject's medium, or copy a preset's `FRAME.md` when the person
   names one. Compile and lint fail while the marker remains. Field Manual is a preset, not the
   fallback.
+- **Design the frame, not a page.** Read `/video-design` before the first scene. No cards, carousels,
+  navigation, eyebrow labels or small mono labels; text meant to be read is at least 28 px, and a
+  label below 24 px is removed rather than shrunk.
 - A deep dive may use worked examples, but "one concrete example" is not the spine. The question is
   the spine; examples are how the rebuild is made visible.
 

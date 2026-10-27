@@ -6,7 +6,7 @@
       "files": 2
     },
     "hyperframes": {
-      "hash": "feaeb477213e991a",
+      "hash": "12cff93e6b26ea99",
       "files": 97
     },
     "hyperframes-cli": {
@@ -27,6 +27,10 @@
     },
     "slideshow": {
       "hash": "c8a591e2aa7a6d86",
+      "files": 2
+    },
+    "video-design": {
+      "hash": "0223ca70ebba8155",
       "files": 2
     }
   }

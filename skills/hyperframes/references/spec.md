@@ -59,6 +59,8 @@ These are where generated video lands when nothing else is decided. Each is bann
 - text that moves while it is read; titles that keep drifting after they land;
 - corner labels, frame borders, corner brackets, HUD readouts as decoration;
 - three cards in a row, KPI grids, a title over a dimmed screenshot;
+- web-page chrome: navigation, buttons, pills and chips, carousels, card grids, dashboards,
+  eyebrow labels above headings, meta strings joined by dots, and labels below 24 px;
 - the logo docked in a corner.
 
 After the first render, name every default it used anyway, from this list or not, add each to the film's BANNED line, and fix them. The list grows with every film.
