@@ -326,7 +326,7 @@ with a skill, the workspace file and the skill win.
 
 ## Read in this order, every session
 
-1. \`../../AGENTS.md\` - workspace rules 1-12: truth ledger, \`episode.json\`, the gate, the audit trail.
+1. \`../../AGENTS.md\` - workspace rules 1-13: truth ledger, \`episode.json\`, the gate, the audit trail.
 2. \`/hyperframes\` - the render contract and work loop; then
    \`/hyperframes/references/episode.md\` for the deep-dive pipeline: through-line question,
    narrative arc, narration timing, captions, audio, QA gates and YouTube packaging. **Always**,
