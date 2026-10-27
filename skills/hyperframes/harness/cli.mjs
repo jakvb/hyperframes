@@ -860,7 +860,7 @@ async function cmdLintScript() {
     const beatClaims = scriptClaims.get(beat.id) ?? [];
     const numbers = numericClaims(text);
     const labelled = beatClaims.some((claim) =>
-      /implementation fact|illustrative|arithmetic/i.test(claim),
+      /implementation fact|illustrative|arithmetic|derivation/i.test(claim),
     );
     if (numbers.length && !beatClaims.length) {
       warnings.push(
