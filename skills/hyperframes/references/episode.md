@@ -53,7 +53,7 @@ starts only when the gate passes.
 |---|---|---|---|
 | 0 | Commission | `BRIEF.md` | Promise, through-line question, stakes, audience, length, belief ladder |
 | 1 | Truth | `SOURCES.md` + claim ledger | Every fact, date, quote and mechanism maps to a source, a derivation or an illustrative label |
-| 2 | Arc | `STORYLINES.md` + `SPEC.md` | Three narrative routes; one through-line question; six movements with a low and a high |
+| 2 | Arc | `STORYLINES.md` + `SPEC.md` | Three narrative routes; one through-line question; six movements with a low and a high; `frame.md` filled |
 | 3 | Script | `SCRIPT.md` + `beats/*.txt` | Reads at 150-165 wpm; every beat changes belief or stakes; every rebuild step follows |
 | 4 | Board | `episode.json` + `STORYBOARD.md` | Beats own narration; shots own picture time; `compile` writes the board |
 | 5 | Voice | `assets/voice/<beat>.wav` | Per-beat audio exists; duration measured |
@@ -115,6 +115,10 @@ Research rules:
 - **`SPEC.md`** turns every adjective into a number: ground hex, ink, one accent, display face,
   weight, size, tracking, body face, grid, margins, shadow, grain, eases, shot lengths. Add the six
   movements and what changes in the viewer's belief at each (`spec.md`).
+- **The look is a decision, not a default.** `new` writes a neutral `frame.md` marked
+  `LOOK-NOT-CHOSEN`; fill it from the subject's medium, or copy a preset's `FRAME.md` when the person
+  names one. Compile and lint fail while the marker remains. Field Manual is a preset, not the
+  fallback.
 - A deep dive may use worked examples, but "one concrete example" is not the spine. The question is
   the spine; examples are how the rebuild is made visible.
 

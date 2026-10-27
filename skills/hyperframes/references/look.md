@@ -24,7 +24,9 @@ A reference film or image gives its grammar, never its content: shot lengths, ho
 
 ## Presets
 
-The presets are slide-deck looks: use one when the person names it, or for a deck (`/slideshow`), never as the fallback for a film without a brand. Each folder in `../assets/frame-presets/` holds a `FRAME.md` spec, a `caption-skin.html` and a `frame-showcase.html` contact sheet. To use one, copy its `FRAME.md` to the project root as `frame.md`, then read it as above; its fonts that aren't bundled need `@font-face` files. The two HTML files are reference code: read them for treatments, never mount them.
+The presets are prepackaged looks: use one when the person names it, or for a deck (`/slideshow`), never as the fallback for a film without a brand. Each folder in `../assets/frame-presets/` holds a `FRAME.md` spec, a `caption-skin.html` and a `frame-showcase.html` contact sheet. To use one, copy its `FRAME.md` to the project root as `frame.md`, then read it as above; its fonts that aren't bundled need `@font-face` files. The two HTML files are reference code: read them for treatments, never mount them.
+
+`field-manual` was the old project template; it is now opt-in like the rest. A new project starts with a neutral `frame.md` marked `LOOK-NOT-CHOSEN`; compile and lint fail until the look is chosen and its tokens are filled.
 
 | Preset              | Look                                                                                           |
 | ------------------- | ---------------------------------------------------------------------------------------------- |
@@ -41,6 +43,7 @@ The presets are slide-deck looks: use one when the person names it, or for a dec
 | `creative-mode`     | Sparse neobrutalist: cream, 4px ink borders, Archivo Black caps, rationed accents              |
 | `daisy-days`        | Picture book: charcoal outlines, sunny pastels, Fredoka One, hand-drawn ornaments              |
 | `editorial-forest`  | Literary: green, pink and cream, Source Serif display, mono chrome, flat paper                 |
+| `field-manual`      | Working notebook: putty paper, near-black ink, Oswald + Lato + Plex Mono, one vermilion mark  |
 
 ## The LOOK line
 

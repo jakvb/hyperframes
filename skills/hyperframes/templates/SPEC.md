@@ -5,7 +5,7 @@ QUESTION:<the through-line question, <= 15 words>
 ARC:     question -> old picture -> crack -> rebuild -> test -> consequence;
          name what changes in the viewer's belief at each movement
 OUTPUT:  HyperFrames, 1920x1080, 30 fps
-TOKENS:  read frame.md; do not repeat its hex values or type sizes here
+TOKENS:  replace the neutral frame.md, then read it; do not repeat its hex values or sizes here
 TIME:    <seconds> s x 30 = <frames>; <BPM and frames per beat if music>
 LOOK:    ground <hex + texture + amount>; ink <hex>; accent <hex + where it may appear>;
          display <face + weight + px + tracking>; body <face + weight + px>;
