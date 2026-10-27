@@ -347,6 +347,8 @@ with a skill, the workspace file and the skill win.
 - One through-line question and one visual world that changes; a deep dive runs question -> old
   picture -> crack -> rebuild -> test -> consequence, with a real low and a real high. No bullet
   slides, no three cards.
+- The look is a decision: replace the neutral \`frame.md\` (\`LOOK-NOT-CHOSEN\`) from the subject's
+  medium before compile; compile and lint fail until it is chosen.
 
 ## HyperFrames essentials (full contract in \`/hyperframes\`)
 
